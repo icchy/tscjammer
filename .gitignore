@@ -1,0 +1,16 @@
+*.o
+*.a
+*.d
+*.bin
+*.bin
+
+.depends
+.flags
+.objects
+.boptions
+
+.deps/
+.libs/
+
+bitvisor.elf
+bitvisor.map
