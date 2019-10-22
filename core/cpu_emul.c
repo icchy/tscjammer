@@ -53,6 +53,15 @@ cpu_emul_cpuid (void)
 	current->vmctl.write_general_reg (GENERAL_REG_RDX, od);
 }
 
+void
+cpu_emul_rdtsc(int noise)
+{
+	u32 rdx, rax;
+	asm_rdtsc(&rax, &rdx);
+	current->vmctl.write_general_reg(GENERAL_REG_RAX, rax+noise);
+	current->vmctl.write_general_reg(GENERAL_REG_RDX, rdx);
+}
+
 bool
 cpu_emul_rdmsr (void)
 {

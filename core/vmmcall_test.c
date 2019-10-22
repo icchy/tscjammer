@@ -27,71 +27,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _CORE_VCPU_H
-#define _CORE_VCPU_H
+#include "config.h"
+#include "constants.h"
+#include "current.h"
+#include "debug.h"
+#include "initfunc.h"
+#include "panic.h"
+#include "printf.h"
+#include "process.h"
+#include "thread.h"
+#include "spinlock.h"
+#include "vmmcall.h"
 
-#include "acpi.h"
-#include "cache.h"
-#include "cpu_mmu_spt.h"
-#include "cpuid.h"
-#include "gmm.h"
-#include "io_io.h"
-#include "localapic.h"
-#include "mmio.h"
-#include "msr.h"
-#include "svm.h"
-#include "types.h"
-#include "vmctl.h"
-#include "vt.h"
-#include "xsetbv.h"
+static spinlock_t test_lock, test_lock2;
 
-struct exint_func {
-	void (*int_enabled) (void);
-	void (*exintfunc_default) (int num);
-	void (*hlt) (void);
-};
+static void
+test (void)
+{
+	ulong rbx;
+	int a, b;
 
-struct nmi_func {
-	unsigned int (*get_nmi_count) (void);
-};
+	current->vmctl.read_general_reg (GENERAL_REG_RBX, &rbx);
+	noise_max = (u32)rbx;
+	printf("changed noise_max: %d\n", noise_max);
+	current->vmctl.write_general_reg (GENERAL_REG_RAX, (ulong)noise_max);
+}
 
-struct sx_init_func {
-	unsigned int (*get_init_count) (void);
-	void (*inc_init_count) (void);
-};
 
-struct vcpu {
-	struct vcpu *next;
-	union {
-		struct vt vt;
-		struct svm svm;
-	} u;
-	bool halt;
-	bool initialized;
-	u64 tsc_offset;
-	bool updateip;
-	u64 pte_addr_mask;
-	struct cpu_mmu_spt_data spt;
-	struct cpuid_data cpuid;
-	struct exint_func exint;
-	struct gmm_func gmm;
-	struct io_io_data io;
-	struct msr_data msr;
-	struct vmctl_func vmctl;
-	/* vcpu0: data per VM */
-	struct vcpu *vcpu0;
-	struct mmio_data mmio;
-	struct nmi_func nmi;
-	struct xsetbv_data xsetbv;
-	struct acpi_data acpi;
-	struct localapic_data localapic;
-	struct sx_init_func sx_init;
-	struct cache_data cache;
-};
+static void
+vmmcall_test_init(void)
+{
+	spinlock_init(&test_lock2);
+	vmmcall_register("test", test);
+}
 
-void vcpu_list_foreach (bool (*func) (struct vcpu *p, void *q), void *q);
-void load_new_vcpu (struct vcpu *vcpu0);
-
-u32 noise_max;
-
-#endif
+INITFUNC ("vmmcal0", vmmcall_test_init);
+// INITFUNC ("global3", vmmcall_test_init_global);

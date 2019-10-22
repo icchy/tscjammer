@@ -307,6 +307,7 @@ vt__vmcs_init (void)
 		    VMCS_PROC_BASED_VMEXEC_CTL2_ENABLE_XSAVES_BIT)
 			procbased_ctls2 |=
 				VMCS_PROC_BASED_VMEXEC_CTL2_ENABLE_XSAVES_BIT;
+		procbased_ctls2 |= VMCS_PROC_BASED_VMEXEC_CTL2_ENABLE_RDTSCP_BIT;
 	}
 	if ((exit_ctls_and & VMCS_VMEXIT_CTL_SAVE_IA32_EFER_BIT) &&
 	    (exit_ctls_and & VMCS_VMEXIT_CTL_LOAD_IA32_EFER_BIT) &&
@@ -371,6 +372,7 @@ vt__vmcs_init (void)
 		      VMCS_PROC_BASED_VMEXEC_CTL_USETSCOFF_BIT |
 		      VMCS_PROC_BASED_VMEXEC_CTL_USEIOBMP_BIT |
 		      VMCS_PROC_BASED_VMEXEC_CTL_USEMSRBMP_BIT |
+			  VMCS_PROC_BASED_VMEXEC_CTL_RDTSCEXIT_BIT |
 		      (procbased_ctls2_and ?
 		       VMCS_PROC_BASED_VMEXEC_CTL_ACTIVATECTLS2_BIT : 0) |
 		      procbased_ctls_or) & procbased_ctls_and);

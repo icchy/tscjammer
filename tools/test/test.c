@@ -27,71 +27,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _CORE_VCPU_H
-#define _CORE_VCPU_H
-
-#include "acpi.h"
-#include "cache.h"
-#include "cpu_mmu_spt.h"
-#include "cpuid.h"
-#include "gmm.h"
-#include "io_io.h"
-#include "localapic.h"
-#include "mmio.h"
-#include "msr.h"
-#include "svm.h"
-#include "types.h"
-#include "vmctl.h"
-#include "vt.h"
-#include "xsetbv.h"
-
-struct exint_func {
-	void (*int_enabled) (void);
-	void (*exintfunc_default) (int num);
-	void (*hlt) (void);
-};
-
-struct nmi_func {
-	unsigned int (*get_nmi_count) (void);
-};
-
-struct sx_init_func {
-	unsigned int (*get_init_count) (void);
-	void (*inc_init_count) (void);
-};
-
-struct vcpu {
-	struct vcpu *next;
-	union {
-		struct vt vt;
-		struct svm svm;
-	} u;
-	bool halt;
-	bool initialized;
-	u64 tsc_offset;
-	bool updateip;
-	u64 pte_addr_mask;
-	struct cpu_mmu_spt_data spt;
-	struct cpuid_data cpuid;
-	struct exint_func exint;
-	struct gmm_func gmm;
-	struct io_io_data io;
-	struct msr_data msr;
-	struct vmctl_func vmctl;
-	/* vcpu0: data per VM */
-	struct vcpu *vcpu0;
-	struct mmio_data mmio;
-	struct nmi_func nmi;
-	struct xsetbv_data xsetbv;
-	struct acpi_data acpi;
-	struct localapic_data localapic;
-	struct sx_init_func sx_init;
-	struct cache_data cache;
-};
-
-void vcpu_list_foreach (bool (*func) (struct vcpu *p, void *q), void *q);
-void load_new_vcpu (struct vcpu *vcpu0);
-
-u32 noise_max;
-
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef __MINGW32__
+#include <conio.h>
+#define NOECHO()
+#define GETCHAR() getch ()
+#define PUTCHAR(c) putch (c)
+#define ECHO()
+#else
+#define NOECHO() system ("stty -echo -icanon")
+#define GETCHAR() getchar ()
+#define PUTCHAR(c) putchar (c), fflush (stdout)
+#define ECHO() system ("stty echo icanon")
 #endif
+#include "../common/call_vmm.h"
+
+static int
+vmmcall_test (int c)
+{
+	call_vmm_function_t f;
+	call_vmm_arg_t a;
+	call_vmm_ret_t r;
+
+	CALL_VMM_GET_FUNCTION ("test", &f);
+	if (!call_vmm_function_callable (&f)) {
+		fprintf (stderr, "vmmcall \"test\" failed\n");
+		exit (1);
+	}
+	a.rbx = (long)c;
+	call_vmm_call_function (&f, &a, &r);
+	return (int)r.rax;
+}
+
+
+int
+main (int argc, char **argv)
+{
+	if (argc < 2) {
+		exit(EXIT_FAILURE);
+	}
+	int noise = atoi(argv[1]);
+	int ret = vmmcall_test(noise);
+	printf("ret: %d\n", ret);
+	return 0;
+}

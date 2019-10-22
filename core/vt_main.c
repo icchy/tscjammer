@@ -116,6 +116,30 @@ do_cpuid (void)
 	add_ip ();
 }
 
+u32 lcm_a = 1103515245;
+u32 lcm_c = 12345;
+u32 lcm_m = 2<<30;
+u32 lcm_rand = 12345;
+
+static u32
+randint(u32 max)
+{
+	lcm_rand = (lcm_a * lcm_rand + lcm_c) % lcm_m;
+	return lcm_rand % max;
+}
+
+static void
+do_rdtsc(void)
+{
+	int noise = 0;
+	if (noise_max != 0) {
+		noise = randint(noise_max);
+		noise -= noise_max/2;
+	}
+	cpu_emul_rdtsc(noise);
+	add_ip();
+}
+
 static void
 make_gp_fault (u32 errcode)
 {
@@ -863,6 +887,10 @@ vt__exit_reason (void)
 		break;
 	case EXIT_REASON_CPUID:
 		do_cpuid ();
+		break;
+	case EXIT_REASON_RDTSC:
+	case EXIT_REASON_RDTSCP:
+		do_rdtsc();
 		break;
 	case EXIT_REASON_IO_INSTRUCTION:
 		STATUS_UPDATE (asm_lock_incl (&stat_iocnt));

@@ -450,10 +450,13 @@ static void
 get_shiftflags (void)
 {
 #ifdef SHIFT_KEY_DEBUG
+	shiftkey = 1;
+#ifndef FORCE_DEBUG
 	if (uefi_booted)
 		shiftkey = 0;
 	else
 		shiftkey = callrealmode_getshiftflags ();
+#endif
 #else
 	shiftkey = 0;
 #endif
